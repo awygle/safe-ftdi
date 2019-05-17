@@ -1,5 +1,3 @@
-#![feature(nll)]
-
 extern crate clap;
 extern crate safe_ftdi as ftdi;
 extern crate bitreader;
