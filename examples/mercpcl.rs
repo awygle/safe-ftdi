@@ -1,6 +1,6 @@
 #![feature(nll)]
 
-extern crate argparse;
+extern crate clap;
 extern crate safe_ftdi as ftdi;
 extern crate bitreader;
 extern crate byteorder;
@@ -11,7 +11,7 @@ use std::fs::{File};
 use std::result;
 use std::fmt;
 use std::io::{Read};
-use argparse::{ArgumentParser, Store};
+use clap::{Arg, App};
 
 // Rewrite of Mercury Programmer Command Line (mercpcl) utility in Rust.
 // Meant to be demonstrative of functionality more than great coding practices
@@ -31,14 +31,14 @@ mod mercury {
     }
 
     #[derive(Debug)]
-    pub enum MercuryError<'a> {
-        SafeFtdi(ftdi::error::Error<'a>),
+    pub enum MercuryError {
+        SafeFtdi(ftdi::error::Error),
         Timeout
     }
 
-    pub type MercuryResult<'a, T> = result::Result<T, MercuryError<'a>>;
+    pub type MercuryResult<T> = result::Result<T, MercuryError>;
 
-    impl<'a> fmt::Display for MercuryError<'a> {
+    impl<'a> fmt::Display for MercuryError {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match *self {
                  MercuryError::SafeFtdi(_) => {
@@ -51,7 +51,7 @@ mod mercury {
         }
     }
 
-    impl<'a> ::std::error::Error for MercuryError<'a> {
+    impl ::std::error::Error for MercuryError {
         fn cause(&self) -> Option<&::std::error::Error> {
             match *self {
                 MercuryError::SafeFtdi(ref ftdi_err) => {
@@ -64,8 +64,8 @@ mod mercury {
         }
     }
 
-    impl<'a> From<ftdi::error::Error<'a>> for MercuryError<'a> {
-        fn from(error: ftdi::error::Error<'a>) -> Self {
+    impl From<ftdi::error::Error> for MercuryError {
+        fn from(error: ftdi::error::Error) -> Self {
             MercuryError::SafeFtdi(error)
         }
     }
@@ -277,13 +277,11 @@ mod mercury {
 use mercury::*;
 
 fn main() {
-    let mut parser = ArgumentParser::new();
-    let mut bitstream_file = String::new();
-
-    parser.refer(&mut bitstream_file)
-          .add_argument("bitstream_file", Store, "Path to bitstream file")
-          .required();
-    parser.parse_args_or_exit();
+    let args = App::new("Mercury Programmer Command Line")
+        .arg(Arg::with_name("bitstream_file")
+            .required(true))
+        .get_matches();
+    let bitstream_file = args.value_of("bitstream_file").unwrap();
 
     let mut bfile = match File::open(&bitstream_file) {
         Ok(x) => x,

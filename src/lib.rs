@@ -16,7 +16,7 @@ pub struct Context<'a> {
     _dummy: PhantomData<&'a mut ftdic::ftdi_context>
 }
 
-pub type Result<'a, T> = result::Result<T, error::Error<'a>>;
+pub type Result<T> = result::Result<T, error::Error>;
 
 impl<'a> Context<'a> {
     fn check_ftdi_error<T>(&self, rc : raw::c_int, ok_val : T) -> Result<T> {
@@ -36,7 +36,7 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn new() -> Result<'a, Context<'a>> {
+    pub fn new() -> Result<Context<'a>> {
         let ctx = unsafe { ftdic::ftdi_new() };
 
         if ctx.is_null() {
@@ -96,7 +96,7 @@ impl<'a> Context<'a> {
         self.check_ftdi_error(rc, rc as u32)
     }
 
-    pub fn write_data<'b, 'c>(&'b self, data : &'c [u8]) -> Result<'b, u32> {
+    pub fn write_data<'b>(&self, data : &'b [u8]) -> Result<u32> {
         let raw_ptr = data.as_ptr();
         let raw_len = data.len() as i32;
 
